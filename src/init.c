@@ -20,7 +20,7 @@ extern SEXP C_hashmap_set_range(SEXP hashmap, SEXP keys, SEXP values, SEXP repla
 extern SEXP C_hashmap_set(SEXP hashmap, SEXP value, SEXP replace);
 
 static const R_CallMethodDef CallEntries[] = {
-    {"C_hashmap_insert", (DL_FUNC) &C_hashmap_set, 4}, 
+    {"C_hashmap_set", (DL_FUNC) &C_hashmap_set, 4}, 
     {"C_hashmap_init", (DL_FUNC) &C_hashmap_init, 0}, 
     {"C_hashmap_get", (DL_FUNC) &C_hashmap_get, 2}, 
     {"C_hashmap_remove", (DL_FUNC) &C_hashmap_remove, 2}, 
@@ -31,7 +31,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"C_hashmap_contains", (DL_FUNC) &C_hashmap_contains, 2},
     {"C_hashmap_contains_range", (DL_FUNC) &C_hashmap_contains_range, 2},
     {"C_hashmap_get_range", (DL_FUNC) &C_hashmap_get_range, 2},
-    {"C_hashmap_insert_range", (DL_FUNC) &C_hashmap_set_range, 4},
+    {"C_hashmap_set_range", (DL_FUNC) &C_hashmap_set_range, 4},
     {"C_hashmap_remove_range", (DL_FUNC) &C_hashmap_remove_range, 2},
     {"C_hashmap_tolist", (DL_FUNC) &C_hashmap_tolist, 1},
     {"C_hashmap_invert", (DL_FUNC) &C_hashmap_invert, 1},

@@ -1,16 +1,16 @@
 Package: hashmap
-Title: Fast, vectorized Hashmap
+Title: Fast, Vectorized Hashmap
 Version: 1.0.0
 Description: A fast, vectorized hashmap that is built on top of std::unorderd_map.
     The map can hold any R object as key / value as long as it is serializable and supports 
     vectorized insertion, lookup, and deletion.
-License: GPL-3
+License: file LICENSE
 Authors@R:
     person("Sven", "Glinz", role = c("aut", "cre"), email = "svenglinz@proton.me")
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
-URL: https://test.com
+URL: https://github.com/svensglinz/hashmap
 Imports: 
     glue
 Suggests:

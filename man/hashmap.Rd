@@ -49,7 +49,7 @@ If \code{vectorize=TRUE}, \code{key} must be a list and each element of the \cod
 The result is returned as a list.
 }
 
-\item{\code{map$delete(key, vectorize = FALSE)}} {
+\item{\code{map$delete(key, vectorize = FALSE)}}{
 Remove a key-value pair from the map.
 
 If \code{vectorize=TRUE}, \code{key} must be a list. Each element in the list will be deleted separately.

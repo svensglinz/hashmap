@@ -66,10 +66,18 @@ struct sexp_hash {
     }
 };
 
+/**
+ * Auto-growing List based on LIST SEXP
+ * The list (and thus its elements) is protected 
+ * from garbage collection via R_PreserveObject(...)
+ * 
+ * 
+ * 
+ */
 class R_List {
     private:
     SEXP data_;
-    int idx_ = 0;
+    std::size_t idx_ = 0;
     RSerializer serializer;
 
     public:
@@ -108,23 +116,19 @@ class R_List {
         }
     }
     
-    SEXP data() {
-        return data_;
-    }
-
-    int size() {
+    std::size_t size() {
         return idx_;
     }
 
     void push_back(SEXP x) {
-        int n = Rf_length(data_); // min length = 16
+        std::size_t n = Rf_length(data_); // min length = 16
         if (idx_ >= n) {
             SEXP new_data = PROTECT(Rf_allocVector(VECSXP, n << 1));
             R_PreserveObject(new_data);
             UNPROTECT(1);
 
             // copy old elems 
-            for (int i = 0; i < idx_; i++) {
+            for (std::size_t i = 0; i < idx_; i++) {
                 SET_VECTOR_ELT(new_data, i, VECTOR_ELT(data_, i));
             }
             R_ReleaseObject(data_);
@@ -147,7 +151,7 @@ class Hashmap {
     
     void compact() {
         
-        if (_keys.size() <= 4 * _map.size()) {
+        if (_keys.size() <= 2 * _map.size()) {
             return;
         }
         R_List new_keys;
@@ -163,7 +167,8 @@ class Hashmap {
 
     // finalizer here
     static void finalizer(SEXP extptr) {
-
+        Hashmap *map = static_cast<Hashmap*>(GET_PTR(extptr));
+        delete map;
     }
 
     public:
@@ -172,7 +177,7 @@ class Hashmap {
 
         SEXP list = PROTECT(Rf_allocVector(VECSXP, 2));
         SEXP names = PROTECT(Rf_allocVector(STRSXP, 2));
-
+        
         // duplicate before ?
         SET_VECTOR_ELT(list, 0, keys());
         SET_VECTOR_ELT(list, 1, values());
@@ -216,10 +221,10 @@ class Hashmap {
     }
 
     SEXP contains_range(SEXP _keys) {
-        int len = Rf_length(_keys);
+        std::size_t len = Rf_length(_keys);
         SEXP list = PROTECT(Rf_allocVector(LGLSXP, len));
 
-        for (int i = 0; i < len; i++) {
+        for (std::size_t i = 0; i < len; i++) {
             SEXP k = VECTOR_ELT(_keys, i);
             LOGICAL(list)[0] = this->_map.contains(k);
         }
@@ -243,9 +248,9 @@ class Hashmap {
      * @cond _keys must be a list. This should be checked in the caller of get_range
      */
     SEXP get_range(SEXP _keys) {
-        int size = Rf_length(_keys);
+        std::size_t size = Rf_length(_keys);
         SEXP list = PROTECT(Rf_allocVector(VECSXP, size));
-        for (int i = 0; i < size; i++) {
+        for (std::size_t i = 0; i < size; i++) {
             SEXP k = VECTOR_ELT(_keys, i);
             SEXP v = this->get(k);
             SET_VECTOR_ELT(list, i, v);
@@ -260,8 +265,8 @@ class Hashmap {
      * This should be checked in the caller of insert_range
      */
     SEXP set_range(SEXP _keys, SEXP _values, SEXP _replace) {
-        int size = Rf_length(_keys); 
-        for (int i = 0; i < size; i++) {
+        std::size_t size = Rf_length(_keys); 
+        for (std::size_t i = 0; i < size; i++) {
             SEXP k = VECTOR_ELT(_keys, i);
             SEXP v = VECTOR_ELT(_values, i);
             this->set(k, v, _replace);
@@ -276,8 +281,8 @@ class Hashmap {
     }
 
     SEXP remove_range(SEXP _keys) {
-        int len = Rf_length(_keys);
-        for (int i = 0; i < len; i++) {
+        std::size_t len = Rf_length(_keys);
+        for (std::size_t i = 0; i < len; i++) {
             SEXP k = VECTOR_ELT(_keys, i);
             this->remove(k);
         }
@@ -290,7 +295,7 @@ class Hashmap {
     SEXP keys() {
         // create list
         SEXP list = PROTECT(allocVector(VECSXP, this->_map.size()));
-        int i = 0;
+        std::size_t i = 0;
         for (auto it = this->_map.begin(); it != this->_map.end(); ++it) {
             SET_VECTOR_ELT(list, i++, it->first);
         }
@@ -303,7 +308,7 @@ class Hashmap {
      */
     SEXP values() {
         SEXP list = PROTECT(allocVector(VECSXP, this->_map.size()));
-        int i = 0;
+        std::size_t i = 0;
         for (auto it = this->_map.begin(); it != this->_map.end(); ++it) {
             SET_VECTOR_ELT(list, i++, it->second);
         }
@@ -323,22 +328,6 @@ class Hashmap {
         return R_NilValue;
     }
 
-    // fn is callback
-    SEXP for_each(SEXP fn) {
-        int size = _map.size();
-        SEXP res = PROTECT(Rf_allocVector(VECSXP, size));
-        
-        int i = 0;
-        for (const auto& [k, v] : _map) {
-            SEXP call = PROTECT(Rf_lang3(fn, k, v));
-            SEXP result = PROTECT(Rf_eval(call, R_GlobalEnv));
-            SET_VECTOR_ELT(res, i, result);
-            UNPROTECT(2);
-        }
-        UNPROTECT(1);
-        return res;
-    }
-
     // returns new, inverted hashmap
     SEXP invert() {
         Hashmap *map_inverted = new Hashmap;
@@ -349,20 +338,7 @@ class Hashmap {
     }
 };
 
-
-class MultiHashMap {
-    std::unordered_multimap<SEXP, SEXP, sexp_hash, sexp_eq> _map;
-
-
-};
-
 extern "C" {
-// called by garbage collector to free hahsmap
-void C_hashmap_finalize(SEXP map_ptr){
-    Hashmap *map = static_cast<Hashmap*>(GET_PTR(map_ptr));
-    delete map;
-}
-
 // initialize empty hashmap
 SEXP C_hashmap_init() {
     Hashmap *map = new Hashmap;

@@ -1,8 +1,8 @@
 #' @useDynLib hashmap, .registration=TRUE
 
 #' @export
-`[<-.hashmap` <- function(map, key, vectorize=FALSE, value) {
-  map$set(key, value, vectorize)
+`[<-.hashmap` <- function(map, key, replace=FALSE, vectorize=FALSE, value) {
+  map$set(key, value, replace, vectorize)
 }
 
 #' @export
@@ -48,7 +48,7 @@
 #' The result is returned as a list.
 #' }
 #' 
-#' \item{\code{map$delete(key, vectorize = FALSE)}} {
+#' \item{\code{map$delete(key, vectorize = FALSE)}}{
 #' Remove a key-value pair from the map.
 #' 
 #' If \code{vectorize=TRUE}, \code{key} must be a list. Each element in the list will be deleted separately.   
@@ -143,19 +143,19 @@ hashmap_init <- function(ptr) {
       return(vals)
   }
 
-  self$set <- function(key, value, vectorize=FALSE) {
+  self$set <- function(key, value, replace=FALSE, vectorize=FALSE) {
       if (vectorize) {
         if (is.list(key) && is.list(value)) {
           if (length(key) != length(value)) {
             stop("key and value must have the same length when vectorize=TRUE")
           } else {
-            .Call("C_hashmap_insert_range", self$.ptr, key, value)
+            .Call("C_hashmap_set_range", self$.ptr, key, value, replace)
           }
         } else {
             stop("key and value must be lists when vectorize = TRUE")
         }
       } else {
-        .Call("C_hashmap_insert", self$.ptr, key, value)
+        .Call("C_hashmap_set", self$.ptr, key, value, replace)
       }
       invisible(self)
       }
