@@ -83,3 +83,16 @@ test_that("invert", {
     expect_identical(b$size(), 1)
     expect_identical(length(b$values()[[1]]), 3L)
 })
+
+test_that("from_list", {
+    m <- hashmap()
+    m$set(100, 200)
+    list <- m$to_list()
+    expect_error(m$from_list(list(a = 100, b = 200))) # names should be keys, values
+    expect_error(m$from_list(list("keys" = 100, "values" = 200, "other" = 300))) # other is redundant
+    expect_no_error(m$from_list(list("keys" = list(100, 200), "values" = list(1, 2))))
+    m$from_list(list("keys" = list(100, 200), "values" = list(1, 2)))
+    expect_equal(m$size(), 2)
+    expect_equal(m[100], 1)
+    expect_equal(m[200], 2)
+})

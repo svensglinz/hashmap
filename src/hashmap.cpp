@@ -376,16 +376,17 @@ class Hashmap {
     - length(list) == 2
     - names(list[1] == "keys")
     - names(list[2] == "values")
+    - typeof(list[1]) == "list"
+    - typeof(list[2]) == "list"
     - length(list[1]) == length(list[2])
     */
     SEXP from_list(SEXP list) {
         SEXP keys = VECTOR_ELT(list, 0);
-        SEXP values = VECTOR_ELT(list, 0);
+        SEXP values = VECTOR_ELT(list, 1);
         this->clear();
         this->set_range(keys, values, Rf_ScalarLogical(0));
         return R_NilValue;
     }
-
 };
 
 extern "C" {
