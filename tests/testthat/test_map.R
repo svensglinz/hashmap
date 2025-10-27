@@ -19,20 +19,26 @@ test_that("insertion", {
     expect_identical(m["key"], "value")
     expect_identical(m$size(), 5)
 
+    # duplicate inserts
+    m[1] = 100
+    expect_identical(m[1], 1)
+    m$set(1, 100, replace=TRUE)
+    expect_identical(m[1], 100)
+
     # vectorized inserts
-    m[as.list(1:1e5), vectorize = TRUE] = as.list(rep("i", 1e5))
+    m$set(as.list(1:1e5), as.list(rep("i", 1e5)), vectorize = TRUE)
     expect_identical(m$size(), 1e5 + 5)
 
     expect_identical(m[12345L], "i")
-    expect_error(m[list(1, 2, 3), vectorize = TRUE] <- list(1, 2))
-    expect_error(m[c(1, 2, 3), vectorize = TRUE] <- list(1, 2, 3))
+    expect_error(m$set(list(1, 2, 3), list(1, 2), vectorize=TRUE))
+    expect_error(m$set(c(1, 2, 3), list(1, 2, 3), vectorize=TRUE))
     m$clear()
     expect_identical(m$size(), 0)
 })
 
 test_that("deletion", {
     m <- hashmap()
-    m[as.list(1:100), vectorize = TRUE] <- as.list(1:100)
+    m$set(as.list(1:100), as.list(1:100), vectorize=TRUE)
     m$remove(1) # should not remove as 1:100 are integers
     m$remove(1L)
     m$remove(2L)
@@ -53,9 +59,27 @@ test_that("lookup", {
     m[100L] <- 200
     expect_identical(m[100L], 200)
     expect_null(m[100])
-    m[list(1, 2, 3), vectorize = TRUE] <- list(1, 2, 3)
-    expect_identical(m[list(1, 2, 3), vectorize = TRUE], list(1, 2, 3))
-    expect_error(m[100, vectorize = TRUE] <- list(1))
-    expect_identical(m$size(), 4)
+    m$set(list(1, 2, 3), list(1, 2, 3))
+    expect_identical(m$get(list(1, 2, 3)), list(1, 2, 3))
+    expect_identical(m$size(), 2)
 })
 
+test_that("clone", {
+    m <- hashmap()
+    m[1] <- 1
+    m[2] <- 2
+    a <- m$clone()
+    expect_identical(a$to_list(), m$to_list())
+})
+
+test_that("invert", {
+    m <- hashmap()
+    m$set(list(1, 2, 3), list(10, 10, 10), vectorize=TRUE)
+    a <- m$invert(duplicates="first")
+    expect_identical(a$size(), 1)
+    expect_identical(length(a$values()[[1]]), 1L)
+    
+    b <- m$invert(duplicates="stack")
+    expect_identical(b$size(), 1)
+    expect_identical(length(b$values()[[1]]), 3L)
+})

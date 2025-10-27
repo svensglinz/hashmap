@@ -2,4 +2,4 @@
 /src/*.o
 .vscode
 *.tar.gz
-hashmap.Rcheck/
+hashmapR.Rcheck/

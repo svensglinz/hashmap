@@ -1,3 +1,5 @@
-^Chashmap\.Rproj$
+^hashmapR\.Rproj$
 ^\.Rproj\.user$
 .vscode
+.git
+.gitignore

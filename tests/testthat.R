@@ -1,4 +1,4 @@
 library(testthat)
-library(hashmap)
+library(hashmapR)
 
-test_check("hashmap")
+test_check("hashmapR")

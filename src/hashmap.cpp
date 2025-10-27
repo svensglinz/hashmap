@@ -1,15 +1,13 @@
 #include <unordered_map>
 #include <string_view>
-#include <stdint.h> 
+#include <set>
 #include <vector>
 #include <Rinternals.h>
 #include <R.h>
-
 #ifndef R_NO_REMAP
 #define R_NO_REMAP
 #endif 
 
-#undef length
 #define GET_PTR(SEXP) (R_ExternalPtrAddr(SEXP))
 
 class RSerializer {
@@ -70,9 +68,6 @@ struct sexp_hash {
  * Auto-growing List based on LIST SEXP
  * The list (and thus its elements) is protected 
  * from garbage collection via R_PreserveObject(...)
- * 
- * 
- * 
  */
 class R_List {
     private:
@@ -86,6 +81,8 @@ class R_List {
         R_PreserveObject(data_);
         UNPROTECT(1);
     }
+
+    R_List(const R_List &other) : data_(other.data_), idx_(other.idx_), serializer(other.serializer) {}
 
     // move assignment
     R_List& operator=(R_List&& other) {
@@ -116,8 +113,12 @@ class R_List {
         }
     }
     
-    std::size_t size() {
+    std::size_t size() const {
         return idx_;
+    }
+
+    SEXP operator[](std::size_t idx) const {
+        return VECTOR_ELT(data_, idx);
     }
 
     void push_back(SEXP x) {
@@ -147,7 +148,6 @@ class Hashmap {
         std::unordered_map<SEXP, SEXP, sexp_hash, sexp_eq> _map;
         R_List _keys;
         R_List _values;
-        RSerializer serializer;
     
     void compact() {
         
@@ -172,6 +172,10 @@ class Hashmap {
     }
 
     public:
+    
+    Hashmap(const Hashmap &other) : _map(other._map), _keys(other._keys), _values(other._values) {}
+
+    Hashmap() {}
 
     SEXP to_list() {
 
@@ -194,23 +198,21 @@ class Hashmap {
     SEXP to_extptr() {
         SEXP extptr = PROTECT(R_MakeExternalPtr(this, R_NilValue, R_NilValue));
         R_RegisterCFinalizerEx(extptr, finalizer, TRUE);
-        setAttrib(extptr, R_ClassSymbol, mkString("hashmap"));
         UNPROTECT(1);
         return extptr;
     }
 
-    SEXP set(SEXP _key, SEXP _value, SEXP replace) {
+    SEXP set(SEXP _key, SEXP _value, SEXP _replace) {
         SEXP k_dup = PROTECT(duplicate(_key));
         SEXP v_dup = PROTECT(duplicate(_value));
-
         _keys.push_back(k_dup);
         _values.push_back(v_dup);
         
         UNPROTECT(2);
-        if (R_isTRUE(replace)) {
+        if (R_isTRUE(_replace)) {
             this->_map.insert_or_assign(k_dup, v_dup);
         } else {
-            this->_map.emplace(k_dup, v_dup);
+            this->_map.insert({k_dup, v_dup});
         }
         this->compact();
         return R_NilValue;
@@ -329,13 +331,61 @@ class Hashmap {
     }
 
     // returns new, inverted hashmap
-    SEXP invert() {
+    /*
+    Invariants:
+    - _duplicates %in% c("stack", "first")
+    */
+    SEXP invert(SEXP _duplicates) {
         Hashmap *map_inverted = new Hashmap;
-        for (const auto& [k, v] : _map) {
-            map_inverted->set(v, k, Rf_ScalarLogical(1)); // option to stack (list), / use first match / use last match
+
+        if (strcmp(CHAR(Rf_asChar(_duplicates)), "stack") == 0) {
+            std::unordered_map<SEXP, R_List, sexp_hash, sexp_eq> value_to_keys;
+
+            for (const auto& [k, v] : _map) {
+                value_to_keys[v].push_back(k);
+            }
+
+            for (const auto& [new_key, old_keys] : value_to_keys) {
+                if (old_keys.size() == 1) {
+                    map_inverted->set(new_key, old_keys[0], Rf_ScalarLogical(0));
+                } else {
+                    SEXP key_list = PROTECT(allocVector(VECSXP, old_keys.size()));
+                    for (std::size_t i = 0; i < old_keys.size(); i++) {
+                        SET_VECTOR_ELT(key_list, i, old_keys[i]);
+                    }
+                    map_inverted->set(new_key, key_list, Rf_ScalarLogical(0));
+                    UNPROTECT(1);
+                }
+            }
+            // first
+        } else {
+            for (const auto& [k, v] : _map) {
+                map_inverted->_map.emplace(v, k);
+            }
         }
         return map_inverted->to_extptr();
     }
+
+    SEXP clone() {
+        Hashmap* m = new Hashmap(*this);
+        return m->to_extptr();
+    }
+
+    /*
+    Preconditions:
+    - length(list) == 2
+    - names(list[1] == "keys")
+    - names(list[2] == "values")
+    - length(list[1]) == length(list[2])
+    */
+    SEXP from_list(SEXP list) {
+        SEXP keys = VECTOR_ELT(list, 0);
+        SEXP values = VECTOR_ELT(list, 0);
+        this->clear();
+        this->set_range(keys, values, Rf_ScalarLogical(0));
+        return R_NilValue;
+    }
+
 };
 
 extern "C" {
@@ -382,7 +432,7 @@ SEXP C_hashmap_size(SEXP _map) {
 
 SEXP C_hashmap_set_range(SEXP _map, SEXP _keys, SEXP _values, SEXP _replace) {
     Hashmap *map = static_cast<Hashmap*>(GET_PTR(_map));
-    return map->set(_keys, _values, _replace);
+    return map->set_range(_keys, _values, _replace);
 }
 
 SEXP C_hashmap_contains(SEXP _map, SEXP _key) {
@@ -410,8 +460,18 @@ SEXP C_hashmap_tolist(SEXP _map) {
     return map->to_list();
 }
 
-SEXP C_hashmap_invert(SEXP _map) {
+SEXP C_hashmap_invert(SEXP _map, SEXP _duplicates) {
     Hashmap *map = static_cast<Hashmap*>(GET_PTR(_map));
-    return map->invert(); 
+    return map->invert(_duplicates); 
+}
+
+SEXP C_hashmap_clone(SEXP _map) {
+    Hashmap *map = static_cast<Hashmap*>(GET_PTR(_map));
+    return map->clone(); 
+}
+
+SEXP C_hashmap_fromlist(SEXP _map, SEXP _list) {
+    Hashmap *map = static_cast<Hashmap*>(GET_PTR(_map));
+    return map->from_list(_list); 
 }
 }

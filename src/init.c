@@ -18,6 +18,8 @@ extern SEXP C_hashmap_tolist(SEXP hashmap);
 extern SEXP C_hashmap_invert(SEXP hashmap);
 extern SEXP C_hashmap_set_range(SEXP hashmap, SEXP keys, SEXP values, SEXP replace);
 extern SEXP C_hashmap_set(SEXP hashmap, SEXP value, SEXP replace);
+extern SEXP C_hashmap_clone(SEXP hashmap);
+extern SEXP C_hashmap_fromlist(SEXP hashmap, SEXP list);
 
 static const R_CallMethodDef CallEntries[] = {
     {"C_hashmap_set", (DL_FUNC) &C_hashmap_set, 4}, 
@@ -35,6 +37,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"C_hashmap_remove_range", (DL_FUNC) &C_hashmap_remove_range, 2},
     {"C_hashmap_tolist", (DL_FUNC) &C_hashmap_tolist, 1},
     {"C_hashmap_invert", (DL_FUNC) &C_hashmap_invert, 1},
+    {"C_hashmap_clone", (DL_FUNC) &C_hashmap_clone, 1},
+    {"C_hashmap_fromlist", (DL_FUNC) &C_hashmap_fromlist, 2},
     {NULL, NULL, 0}
 };
 

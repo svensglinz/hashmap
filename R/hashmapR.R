@@ -1,13 +1,13 @@
-#' @useDynLib hashmap, .registration=TRUE
+#' @useDynLib hashmapR, .registration=TRUE
 
 #' @export
-`[<-.hashmap` <- function(map, key, replace=FALSE, vectorize=FALSE, value) {
-  map$set(key, value, replace, vectorize)
+`[<-.hashmap` <- function(map, key, value) {
+  map$set(key, value, replace = FALSE, vectorize = FALSE)
 }
 
 #' @export
-`[.hashmap` <- function(map, val, vectorize=FALSE) {
-  map$get(val, vectorize)
+`[.hashmap` <- function(map, val) {
+  map$get(val, vectorize = FALSE)
 }
 
 #' Create a Hashmap Object
@@ -26,6 +26,10 @@
 #' Keys are considered equal if \code{identical(k1, k2) == TRUE}. 
 #' This strict equality means that numeric objects like \code{1L} (integer)
 #' and \code{1} (double) are not considered equal.
+#' 
+#' ## Copy on Insert
+#' On each insertion of a key, value pair, the R objects are duplicated to prevent potential
+#' issues with modifications. 
 #' 
 #' ## Methods
 #' A hashmap object exposes the following methods:
@@ -72,11 +76,27 @@
 #' Restore hashmap contents from a list.
 #' Returns the restored hashmap
 #' }
+#' 
+#' \item{\code{map$clone()}}{
+#' Returns a duplicate of the map
+#' }
+#' 
+#'\item{\code{map$invert(duplicates=c("stack", "first"))}}{
+#' Invert the hashmap by swapping keys and values. Returns a new hashmap where 
+#' the original values become keys and the original keys become values.
+#' 
+#' The \code{duplicates} parameter controls how to handle cases where multiple keys 
+#' map to the same value:
+#' \itemize{
+#'   \item \code{"first"}: Keep only the first key encountered for each value
+#'   \item \code{"stack"}: Store all keys that map to the same value as a list
+#' }
+#' }
 #' }
 #' 
 #' @examples
 #' # create hashmap object
-#' library(hashmap)
+#' library(hashmapR)
 #' m <- hashmap()
 #' 
 #' # insert key, value pair into hashmap
@@ -85,22 +105,20 @@
 #' m$set(1, 2)
 #' m$set(mtcars, Sys.Date())
 #' 
-#' # alternative to $set()
+#' #' # alternative to $set()
 #' m["key"] <- "value"
 #' 
 #' # insert key, value pairs (vectorized)
 #' # if vectorized is not set to TRUE, the list itself is inseted as a single key / value
 #' m$set(list(1, 2, 3), list("one", "two", "three"), vectorize = TRUE)
-#'
-#' # alternatively
-#' m[list(1, 2, 3), vectorize = TRUE] <- list("one", "two", "three")
 #' 
 #' # retreive values
 #' m$get(1)
 #' m$get(list(1, 2, 3), vectorize = TRUE)
-#' # alternatively 
+#' 
+#' #' # alternatively (for single lookups)
 #' m[1]
-#' m[list(1, 2, 3), vectorize = TRUE]
+#' 
 #' # remove values 
 #' m$remove(1)
 #' m$remove(mtcars)
@@ -118,7 +136,13 @@
 #' m$values()
 #' 
 #' # clear map
-#' m$clear() 
+#' m$clear()
+#' 
+#' # duplicate map
+#' m$clone()
+#' 
+#' # invert map (stack duplicates)
+#' m$invert(duplicates="stack")
 #' 
 #' # return 
 #' @export
@@ -128,7 +152,7 @@ hashmap <- function() {
 }
 
 hashmap_init <- function(ptr) {
-  self <- new.env(parent = emptyenv()) # add a class for printing
+  self <- list() # add a class for printing
   class(self) <- "hashmap"
   self$.ptr <- ptr
 
@@ -192,15 +216,20 @@ hashmap_init <- function(ptr) {
     .Call("C_hashmap_size", self$.ptr)
   }
 
-  self$for_each <- function(fn) {
-    .Call("C_hashmap_for_each", self$.ptr)
-  }
-
-  self$invert <- function() {
+  self$invert <- function(duplicates="first") {
     # returns new extptr object
-    new_ptr <- .Call("C_hashmap_invert", self$.ptr)
+    if (!duplicates %in% c("first", "stack")) {
+      stop("duplicates must be first or stack")
+    }
+
+    new_ptr <- .Call("C_hashmap_invert", self$.ptr, duplicates)
     new_map <- hashmap_init(new_ptr)
     return (new_map)
+  }
+
+  self$clone <- function() {
+    ptr <- .Call("C_hashmap_clone", self$.ptr);
+    return(hashmap_init(ptr))
   }
 
   self$remove <- function(key, vectorize = FALSE) {
@@ -219,7 +248,7 @@ hashmap_init <- function(ptr) {
   # document as external function -> takes self as param (documented if not exported ? )
   self$from_list <- function(list) {
     # test structure
-    .Call("C_hashmap_from_list", self$.ptr, list)
+    .Call("C_hashmap_fromlist", self$.ptr, list)
   }
 
   return(self)
@@ -227,5 +256,5 @@ hashmap_init <- function(ptr) {
 
 #' @export
 print.hashmap <- function(x, ...) {
-  glue::glue("Hashmap: Size {x$size()}")
+  cat(sprintf("Hashmap: Size %d\n", x$size()))
 }
