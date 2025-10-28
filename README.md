@@ -11,9 +11,19 @@ If any data structure is inserted that does not follow copy-on-write semantics (
 
 The same applies for all data returned from the hashmap (eg. through $keys(), $values(), $get()). If any returned element does not follow copy-on-write semantics, changes to the data will result in changes to the data in the hashmap.
 
+
+### Serialization
+
+External pointers cannot be directly serialized in R. To save or
+transfer a hashmap, you can convert it to a list using
+`map$to_list()`, which returns a standard R list representation.
+You can restore a hashmap from such a list using `map$from_list(...)`
+
 ### Key Equality
 
-
+Keys are considered equal if `identical(k1, k2) == TRUE`.
+This strict equality means that numeric objects like `1L` (integer)
+and `1` (double) are not considered equal.
 
 ## Installation 
 
@@ -22,8 +32,9 @@ devtools::install_github("svensglinz/hashmapR")
 ```
 
 or via CRAN directly:
+
 ```R
-install.package("hashmapR")
+install.packages("hashmapR")
 ```
 
 # Usage
