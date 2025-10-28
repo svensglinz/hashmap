@@ -256,15 +256,14 @@ hashmap_init <- function(ptr) {
   self$from_list <- function(list) {
     # test structure
     stopifnot(length(list) == 2)
-    stopifnot(names(list[1]) == "keys")
-    stopifnot(names(list[2]) == "values")
-    stopifnot(typeof(list[1]) == "list")
-    stopifnot(typeof(list[2]) == "list")
+    stopifnot(identical(names(list[1]) == "keys"))
+    stopifnot(identical(names(list[2]) == "values"))
+    stopifnot(typeof(list[[1]]) == "list")
+    stopifnot(typeof(list[[2]]) == "list")
     stopifnot(length(list[1]) == length(list[2]))
     .Call("C_hashmap_fromlist", self$.ptr, list)
     invisible(self)
   }
-
   return(self)
 }
 

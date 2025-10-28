@@ -23,6 +23,7 @@ class RSerializer {
     }
 
     public:
+    // Constructor
     RSerializer() {
         buffer_.reserve(1 << 12);
         R_InitOutPStream(
@@ -36,6 +37,10 @@ class RSerializer {
             R_NilValue
         );
     }
+
+    // Copy & move constructor
+    RSerializer(const RSerializer& other) : RSerializer() {}
+    RSerializer(const RSerializer&& other) : RSerializer() {}
 
     std::string_view serialize(SEXP obj) {
         buffer_.clear();
@@ -109,13 +114,13 @@ class R_List {
         return *this;
     }
 
-    ~R_List() {
+    ~R_List() noexcept {
         if (data_ != R_NilValue) {
             R_ReleaseObject(data_);
         }
     }
     
-    std::size_t size() const {
+    std::size_t size() const noexcept {
         return idx_;
     }
 
@@ -180,11 +185,7 @@ class Hashmap {
 
     public:
 
-    Hashmap(const Hashmap &other) : keys_(other.keys_), values_(other.values_) {
-         for (std::size_t i = 0; i < keys_.size(); i++) {
-            map_.emplace(keys_[i], values_[i]);
-         }
-    }
+    Hashmap(const Hashmap &other) : keys_(other.keys_), values_(other.values_), map_(other.map_) {}
 
     Hashmap() {}
 
@@ -220,7 +221,7 @@ class Hashmap {
         if (R_isTRUE(replace)) {
             this->map_.insert_or_assign(key, value);
         } else {
-            this->map_.insert({key, value});
+            this->map_.try_emplace(key, value);
         }
         this->compact();
         return R_NilValue;
@@ -273,12 +274,27 @@ class Hashmap {
      * This should be checked in the caller of insert_range
      */
     SEXP set_range(SEXP keys, SEXP values, SEXP replace) {
+
         std::size_t size = Rf_length(keys); 
-        for (std::size_t i = 0; i < size; i++) {
-            SEXP k = VECTOR_ELT(keys, i);
-            SEXP v = VECTOR_ELT(values, i);
-            this->set(k, v, replace);
+
+        if (R_isTRUE(replace)) {
+            for (std::size_t i = 0; i < size; i++) {
+                SEXP k = VECTOR_ELT(keys, i);
+                SEXP v = VECTOR_ELT(values, i);
+                keys_.push_back(k);
+                values_.push_back(v);
+                this->map_.insert_or_assign(k, v);
+            }
+        } else {
+            for (std::size_t i = 0; i < size; i++) {
+                SEXP k = VECTOR_ELT(keys, i);
+                SEXP v = VECTOR_ELT(values, i);
+                keys_.push_back(k);
+                values_.push_back(v);
+                this->map_.emplace(k, v);
+            }
         }
+        this->compact();  
         return R_NilValue;
     }
 
@@ -325,15 +341,17 @@ class Hashmap {
         return list;
     }
 
-    SEXP size() const {
+    SEXP size() const noexcept{
         return Rf_ScalarReal(map_.size());
     }
 
     /**
      * @brief clears the map
      */
-    SEXP clear() {
+    SEXP clear() noexcept {
         map_.clear();
+        keys_ = R_List();
+        values_ = R_List();
         return R_NilValue;
     }
 
