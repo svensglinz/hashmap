@@ -25,12 +25,17 @@ You can restore a hashmap from such a list using \code{map$from_list(...)}.
 Keys are considered equal if \code{identical(k1, k2) == TRUE}.
 This strict equality means that numeric objects like \code{1L} (integer)
 and \code{1} (double) are not considered equal.
+\subsection{Memory}{
+
+As R uses copy-on-write, the hashmap does not make a copy of keys and values that are inserted but only stores a reference to them.
+Thus, operations such as cloning a hashmap or inserting existing objects into a hashmap come at very little memory overhead.
+If any data structure is inserted that does not follow copy-on-write semantics (unlikely),
+it is up to you to copy the object before insertion should you wish for the hashmap to take ownership of the data.
+
+The same applies for all data returned from the hashmap (eg. through $keys(), $values(), $get()).
+If any returned element does not follow copy-on-write semantics, changes to the data will result in changes to the data in the hashmap.
 }
 
-\subsection{Copy on Insert}{
-
-On each insertion of a key, value pair, the R objects are duplicated to prevent potential
-issues with modifications.
 }
 
 \subsection{Methods}{
@@ -123,14 +128,14 @@ m$get(list(1, 2, 3), vectorize = TRUE)
 #' # alternatively (for single lookups)
 m[1]
 
-# remove values 
+# remove values
 m$remove(1)
 m$remove(mtcars)
 
 # remove values (vectorized)
 m$remove(list(1, 2, 3), vectorize = TRUE)
 
-# return number of items in map 
+# return number of items in map
 m$size()
 
 # return keys as a list
@@ -146,7 +151,6 @@ m$clear()
 m$clone()
 
 # invert map (stack duplicates)
-m$invert(duplicates="stack")
+m$invert(duplicates = "stack")
 
-# return 
 }

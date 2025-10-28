@@ -3,10 +3,22 @@ A fast, vectorized hashmap implementation for R built as a wrapper wrapper aroun
 
 The hashmap allows for the insertion of any key, value as long as it is serializable.
 
+### Memory
+
+As R uses copy-on-write, the hashmap does not make a copy of keys and values that are inserted but only stores a reference to them. Thus, operations such as cloning a hashmap or inserting existing objects into a hashmap come at very little memory overhead.
+
+If any data structure is inserted that does not follow copy-on-write semantics (unlikely), it is up to you to copy the object before insertion should you wish for the hashmap to take ownership of the data.
+
+The same applies for all data returned from the hashmap (eg. through $keys(), $values(), $get()). If any returned element does not follow copy-on-write semantics, changes to the data will result in changes to the data in the hashmap.
+
+### Key Equality
+
+
+
 ## Installation 
 
 ```R
-devtools::install_github("svensglinzChashmap")
+devtools::install_github("svensglinz/hashmapR")
 ```
 
 or via CRAN directly:
