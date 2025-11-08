@@ -227,7 +227,7 @@ class Hashmap {
     }   
 
     SEXP contains(SEXP key) const {
-        return Rf_ScalarLogical(this->map_.contains(key));
+        return Rf_ScalarLogical(this->map_.count(key) > 0);
     }
 
     SEXP contains_range(SEXP keys) const {
@@ -236,7 +236,7 @@ class Hashmap {
 
         for (std::size_t i = 0; i < len; i++) {
             SEXP k = VECTOR_ELT(keys, i);
-            LOGICAL(list)[i] = this->map_.contains(k);
+            LOGICAL(list)[i] = this->map_.count(k) > 0;
         }
         UNPROTECT(1);
         return list;
