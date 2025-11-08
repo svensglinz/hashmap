@@ -69,6 +69,9 @@ test_that("clone", {
     m[1] <- 1
     m[2] <- 2
     a <- m$clone()
+    cat/"\n--- DEBUG --\n"
+    print(a$to_list())
+    print(m$to_list())
     expect_identical(a$to_list(), m$to_list())
 })
 
