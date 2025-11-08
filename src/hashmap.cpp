@@ -487,9 +487,9 @@ SEXP C_hashmap_tolist(SEXP map) {
     return map_->to_list();
 }
 
-SEXP C_hashmap_invert(SEXP map, SEXP _duplicates) {
+SEXP C_hashmap_invert(SEXP map, SEXP duplicates) {
     Hashmap *map_ = static_cast<Hashmap*>(GET_PTR(map));
-    return map_->invert(_duplicates); 
+    return map_->invert(duplicates); 
 }
 
 SEXP C_hashmap_clone(SEXP map) {

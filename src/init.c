@@ -2,24 +2,23 @@
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 
-extern SEXP C_hashmap_insert(SEXP hashmap, SEXP key, SEXP value);
 extern SEXP C_hashmap_init();
-extern SEXP C_hashmap_get(SEXP hashmap, SEXP key);
-extern SEXP C_hashmap_remove(SEXP hashmap, SEXP key);
-extern SEXP C_hashmap_getkeys(SEXP hashmap);
-extern SEXP C_hashmap_getvals(SEXP hashmap);
-extern SEXP C_hashmap_clear(SEXP hashmap);
-extern SEXP C_hashmap_size(SEXP hashmap);
-extern SEXP C_hashmap_get_range(SEXP hashmap, SEXP keys);
-extern SEXP C_hashmap_contains(SEXP hashmap, SEXP keys);
-extern SEXP C_hashmap_contains_range(SEXP hashmap, SEXP keys);
-extern SEXP C_hashmap_remove_range(SEXP hashmap, SEXP keys);
-extern SEXP C_hashmap_tolist(SEXP hashmap);
-extern SEXP C_hashmap_invert(SEXP hashmap);
-extern SEXP C_hashmap_set_range(SEXP hashmap, SEXP keys, SEXP values, SEXP replace);
-extern SEXP C_hashmap_set(SEXP hashmap, SEXP value, SEXP replace);
-extern SEXP C_hashmap_clone(SEXP hashmap);
-extern SEXP C_hashmap_fromlist(SEXP hashmap, SEXP list);
+extern SEXP C_hashmap_get(SEXP map, SEXP key);
+extern SEXP C_hashmap_remove(SEXP map, SEXP key);
+extern SEXP C_hashmap_getkeys(SEXP map);
+extern SEXP C_hashmap_getvals(SEXP map);
+extern SEXP C_hashmap_clear(SEXP map);
+extern SEXP C_hashmap_size(SEXP map);
+extern SEXP C_hashmap_get_range(SEXP map, SEXP keys);
+extern SEXP C_hashmap_contains(SEXP map, SEXP keys);
+extern SEXP C_hashmap_contains_range(SEXP map, SEXP keys);
+extern SEXP C_hashmap_remove_range(SEXP map, SEXP keys);
+extern SEXP C_hashmap_tolist(SEXP map);
+extern SEXP C_hashmap_invert(SEXP map, SEXP duplicates);
+extern SEXP C_hashmap_set_range(SEXP map, SEXP keys, SEXP values, SEXP replace);
+extern SEXP C_hashmap_set(SEXP map, SEXP key, SEXP values, SEXP replace);
+extern SEXP C_hashmap_clone(SEXP map);
+extern SEXP C_hashmap_fromlist(SEXP map, SEXP list);
 
 static const R_CallMethodDef CallEntries[] = {
     {"C_hashmap_set", (DL_FUNC) &C_hashmap_set, 4}, 
@@ -36,7 +35,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"C_hashmap_set_range", (DL_FUNC) &C_hashmap_set_range, 4},
     {"C_hashmap_remove_range", (DL_FUNC) &C_hashmap_remove_range, 2},
     {"C_hashmap_tolist", (DL_FUNC) &C_hashmap_tolist, 1},
-    {"C_hashmap_invert", (DL_FUNC) &C_hashmap_invert, 1},
+    {"C_hashmap_invert", (DL_FUNC) &C_hashmap_invert, 2},
     {"C_hashmap_clone", (DL_FUNC) &C_hashmap_clone, 1},
     {"C_hashmap_fromlist", (DL_FUNC) &C_hashmap_fromlist, 2},
     {NULL, NULL, 0}
