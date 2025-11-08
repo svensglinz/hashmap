@@ -218,7 +218,7 @@ class Hashmap {
         keys_.push_back(key);
         values_.push_back(value);
         
-        if (R_isTRUE(replace)) {
+        if (Rf_asLogical(replace)) {
             this->map_.insert_or_assign(key, value);
         } else {
             this->map_.try_emplace(key, value);
