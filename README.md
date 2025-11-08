@@ -1,4 +1,10 @@
 # hashmapR
+
+<!-- badges: start -->
+[![CRAN status](https://www.r-pkg.org/badges/version/hashmapR)](https://CRAN.R-project.org/package=hashmapR) [![R-CMD-check](https://github.com/svensglinz/hashmap/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/svensglinz/hashmap/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
+
 A fast, vectorized hashmap implementation for R built as a wrapper wrapper around C++ std::unordered_map
 
 The hashmap allows for the insertion of any key, value as long as it is serializable.

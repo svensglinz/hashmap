@@ -6,6 +6,9 @@
 \usage{
 hashmap()
 }
+\value{
+A list of class \code{hashmap} which contains an external pointer object (the hashmap) and methods to access and store elements in the map.
+}
 \description{
 A \code{hashmap} provides a key-value store where keys and values
 can be any R object that is serializable. Internally, it uses a

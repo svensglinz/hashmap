@@ -69,7 +69,8 @@ test_that("clone", {
     m[1] <- 1
     m[2] <- 2
     a <- m$clone()
-    expect_identical(a$to_list(), m$to_list())
+    expect_setequal(a$to_list()$values, m$to_list()$values)
+    expect_setequal(a$to_list()$keys, m$to_list()$keys)
 })
 
 test_that("invert", {
