@@ -149,6 +149,7 @@
 #' # invert map (stack duplicates)
 #' m$invert(duplicates = "stack")
 #'
+#' @return A list of class \code{hashmap} which contains an external pointer object (the hashmap) and methods to access and store elements in the map.
 #' @export
 hashmap <- function() {
   ptr <- .Call("C_hashmap_init")
@@ -256,8 +257,8 @@ hashmap_init <- function(ptr) {
   self$from_list <- function(list) {
     # test structure
     stopifnot(length(list) == 2)
-    stopifnot(identical(names(list[1]) == "keys"))
-    stopifnot(identical(names(list[2]) == "values"))
+    stopifnot(names(list[1]) == "keys")
+    stopifnot(names(list[2]) == "values")
     stopifnot(typeof(list[[1]]) == "list")
     stopifnot(typeof(list[[2]]) == "list")
     stopifnot(length(list[1]) == length(list[2]))

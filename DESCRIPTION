@@ -1,7 +1,7 @@
 Package: hashmapR
 Title: Fast, Vectorized Hashmap
 Version: 1.0.0
-Description: A fast, vectorized hashmap that is built on top of C++ std::unordered_map.
+Description: A fast, vectorized hashmap that is built on top of 'C++' std::unordered_map <https://en.cppreference.com/w/cpp/container/unordered_map.html>.
     The map can hold any R object as key / value as long as it is serializable and supports
     vectorized insertion, lookup, and deletion.
 License: MIT + file LICENSE

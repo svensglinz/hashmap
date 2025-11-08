@@ -185,7 +185,7 @@ class Hashmap {
 
     public:
 
-    Hashmap(const Hashmap &other) : keys_(other.keys_), values_(other.values_), map_(other.map_) {}
+    Hashmap(const Hashmap &other) : map_(other.map_), keys_(other.keys_), values_(other.values_) {}
 
     Hashmap() {}
 
