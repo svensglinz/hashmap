@@ -1,4 +1,4 @@
-# hashmapR
+# hashmapR <a href="https://CRAN.R-project.org/package=hashmapR"><img src="man/img.png" height="138" align="right"></a>
 
 <!-- badges: start -->
 [![CRAN status](https://www.r-pkg.org/badges/version/hashmapR)](https://CRAN.R-project.org/package=hashmapR) [![R-CMD-check](https://github.com/svensglinz/hashmapR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/svensglinz/hashmapR/actions/workflows/R-CMD-check.yaml)
