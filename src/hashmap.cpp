@@ -9,7 +9,8 @@
 #define R_NO_REMAP
 #endif 
 
-#define GET_PTR(SEXP) (R_ExternalPtrAddr(SEXP))
+#define GET_PTR(e) (R_ExternalPtrAddr(e))
+#define GET_STR(e) (R_CHAR(STRING_ELT(e, 0)))
 
 class RSerializer {
     private:
@@ -63,8 +64,30 @@ struct sexp_eq {
 struct sexp_hash {
     mutable RSerializer serializer;
     std::size_t operator()(SEXP e) const {
-        std::string_view bytes = serializer.serialize(e);
-        return std::hash<std::string_view>{}(bytes);
+
+        // determine SEXP type
+        int type = TYPEOF(e);
+
+        switch (type) {
+            case STRSXP: {
+                std::string_view str{GET_STR(e)};
+                return std::hash<std::string_view>{}(str);
+            }
+            case LGLSXP: 
+            case INTSXP: {
+                int v = *INTEGER(e);
+                return std::hash<int>{}(v);
+            }
+            case REALSXP: {
+                double v = *REAL(e);
+                return std::hash<double>{}(v);
+            }
+            default: {
+                // hash via serialization
+                std::string_view bytes = serializer.serialize(e);
+                return std::hash<std::string_view>{}(bytes);
+            }
+        }
     }
 };
 

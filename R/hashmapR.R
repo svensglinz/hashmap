@@ -173,7 +173,6 @@ hashmap_init <- function(ptr) {
     return(vals)
   }
 
-  #idea: pub: dupplicates: = c("ignore", "replace", "append") // append is effectively multimap
   self$set <- function(key, value, replace = FALSE, vectorize = FALSE) {
     if (vectorize) {
       if (is.list(key) && is.list(value)) {
