@@ -79,8 +79,8 @@ struct sexp_hash {
                 return std::hash<int>{}(v);
             }
             case REALSXP: {
-                std::size_t v = *REAL(e);
-                return std::hash<std::size_t>{}(v);
+                double v = *REAL(e);
+                return std::hash<double>{}(v);
             }
             default: {
                 // hash via serialization
